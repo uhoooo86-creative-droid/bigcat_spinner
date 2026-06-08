@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EduActivity Generator</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --gold: #FFD200;
+    --gold2: #F7971E;
+  }
+  body {
+    font-family: Georgia, 'Palatino Linotype', serif;
+    background: linear-gradient(135deg, #0F0C29 0%, #1A1A4E 50%, #24243E 100%);
+    min-height: 100vh;
+    color: #fff;
+  }
+  .sans { font-family: -apple-system, 'Segoe UI', Roboto, sans-serif; }
+
+  /* Header */
+  .header {
+    background: rgba(255,255,255,0.04);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    padding: 24px 32px;
+    display: flex; align-items: center; gap: 16px;
+    position: sticky; top: 0; z-index: 10;
+  }
+  .logo {
+    width: 48px; height: 48px;
+    background: linear-gradient(135deg, var(--gold2), var(--gold));
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    box-shadow: 0 4px 20px rgba(247,151,30,0.4);
+  }
+  .header h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
+  .header .sub { font-size: 12px; color: rgba(255,255,255,0.45); margin-top: 2px; }
+
+  .container { max-width: 900px; margin: 0 auto; padding: 40px 24px; }
+
+  /* Search box */
+  .panel {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 24px;
+    padding: 32px;
+    margin-bottom: 40px;
+    backdrop-filter: blur(12px);
+  }
+  .panel .title { font-size: 28px; font-weight: 700; margin-bottom: 8px; letter-spacing: -0.5px; }
+  .panel .desc { font-size: 14px; color: rgba(255,255,255,0.5); margin-bottom: 24px; }
+
+  .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+  .tag {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 13px;
+    color: rgba(255,255,255,0.65);
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  .input-row { display: flex; gap: 12px; }
+  #topic {
+    flex: 1;
+    background: rgba(255,255,255,0.08);
+    border: 1.5px solid rgba(255,255,255,0.15);
+    border-radius: 14px;
+    padding: 16px 20px;
+    font-size: 16px;
+    color: #fff;
+    outline: none;
+    font-family: Georgia, serif;
+    transition: border-color 0.2s;
+  }
+  #topic::placeholder { color: rgba(255,255,255,0.35); }
+  #topic:focus { border-color: rgba(247,151,30,0.6); }
+  #genBtn {
+    background: linear-gradient(135deg, var(--gold2), var(--gold));
+    border: none; border-radius: 14px;
+    padding: 16px 28px;
+    font-size: 15px; font-weight: 700;
+    color: #1A1A4E;
+    cursor: pointer;
+    white-space: nowrap;
+    box-shadow: 0 4px 20px rgba(247,151,30,0.35);
+    transition: all 0.2s;
+  }
+  #genBtn:disabled {
+    background: rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.4);
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  .examples { margin-top: 16px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .examples .label { font-size: 12px; color: rgba(255,255,255,0.35); }
+  .ex-btn {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 10px;
+    padding: 4px 12px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.5);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .ex-btn:hover { color: var(--gold); border-color: rgba(255,210,0,0.3); }
+
+  /* Loading */
+  .loading { text-align: center; padding: 40px 0; display: none; }
+  .loading.show { display: block; }
+  .spinner {
+    width: 60px; height: 60px;
+    border: 3px solid rgba(255,255,255,0.1);
+    border-top: 3px solid var(--gold);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 20px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading .txt { color: rgba(255,255,255,0.6); font-size: 15px; }
+  .progress { color: rgba(255,255,255,0.4); font-size: 13px; margin-top: 8px; }
+
+  /* Error */
+  .error {
+    background: rgba(255,107,107,0.12);
+    border: 1px solid rgba(255,107,107,0.3);
+    border-radius: 14px;
+    padding: 16px 20px;
+    color: #FF6B6B;
+    font-size: 14px;
+    margin-bottom: 20px;
+    display: none;
+  }
+  .error.show { display: block; }
+
+  /* Results meta */
+  .meta {
+    font-size: 13px; color: rgba(255,255,255,0.4);
+    margin-bottom: 20px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .dot { display: inline-block; width: 6px; height: 6px; background: #1DD1A1; border-radius: 50%; }
+
+  /* Cards */
+  .cards { display: grid; gap: 16px; }
+  .card {
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+  }
+  .card-head {
+    padding: 20px 24px;
+    display: flex; align-items: center; gap: 16px;
+    cursor: pointer;
+  }
+  .badge-emoji {
+    width: 52px; height: 52px;
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px; flex-shrink: 0;
+  }
+  .card-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .subj-label { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+  .type-pill { font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+  .duration { font-size: 10px; color: #999; margin-left: auto; }
+  .card-title { font-size: 17px; font-weight: 700; color: #1A1A2E; letter-spacing: -0.2px; }
+  .card-obj { font-size: 13px; color: #666; margin-top: 2px; }
+  .chevron { font-size: 20px; transition: transform 0.3s; flex-shrink: 0; }
+  .card.open .chevron { transform: rotate(180deg); }
+
+  .card-body { padding: 0 24px 24px; display: none; }
+  .card.open .card-body { display: block; }
+  .body-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px; }
+  .box {
+    background: rgba(255,255,255,0.7);
+    border-radius: 14px;
+    padding: 16px;
+  }
+  .box.full { grid-column: 1 / -1; }
+  .box-label { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px; }
+  .box ol { margin: 0; padding-left: 20px; }
+  .box ol li { font-size: 14px; color: #333; line-height: 1.6; margin-bottom: 6px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { font-size: 12px; padding: 4px 10px; border-radius: 8px; font-weight: 500; }
+  .vocab-chip { font-size: 13px; padding: 4px 12px; border-radius: 8px; font-weight: 600; font-style: italic; }
+  .tip-box { border-radius: 14px; padding: 16px; grid-column: 1 / -1; }
+  .tip-text { font-size: 13px; color: #444; line-height: 1.6; }
+
+  .footer-note { text-align: center; margin-top: 32px; font-size: 12px; color: rgba(255,255,255,0.25); }
+
+  @media (max-width: 600px) {
+    .input-row { flex-direction: column; }
+    .body-grid { grid-template-columns: 1fr; }
+    .header { padding: 18px 20px; }
+    .panel { padding: 24px 20px; }
+  }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">🎓</div>
+    <div>
+      <h1>EduActivity Generator</h1>
+      <div class="sub sans">English Teacher's Classroom Toolkit</div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="panel">
+      <div class="title">주제를 입력하세요</div>
+      <div class="desc sans">Enter a topic → Get 6 cross-curricular English activities instantly</div>
+
+      <div class="tags sans" id="tagList"></div>
+
+      <div class="input-row">
+        <input id="topic" placeholder="예: Animals, Weather, Food, Community..." />
+        <button id="genBtn" class="sans">✨ 생성하기</button>
+      </div>
+
+      <div class="examples sans">
+        <span class="label">빠른 예시:</span>
+        <button class="ex-btn">Animals</button>
+        <button class="ex-btn">Seasons</button>
+        <button class="ex-btn">My Family</button>
+        <button class="ex-btn">Transportation</button>
+        <button class="ex-btn">Colors &amp; Shapes</button>
+      </div>
+    </div>
+
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      <div class="txt sans">6가지 교과 활동을 만들고 있습니다...</div>
+      <div class="progress sans" id="progress"></div>
+    </div>
+
+    <div class="error sans" id="error"></div>
+
+    <div id="results"></div>
+  </div>
+
+<script>
+const SUBJECTS = [
+  { id: "pe",       label: "체육", emoji: "🏃", type: "active", desc: "Physical Education, movement-based" },
+  { id: "art",      label: "미술", emoji: "🎨", type: "static", desc: "Art & craft, drawing/making" },
+  { id: "social",   label: "사회", emoji: "🌍", type: "active", desc: "Social studies, role-play/discussion" },
+  { id: "language", label: "언어", emoji: "📖", type: "static", desc: "Language arts, reading/writing/grammar" },
+  { id: "math",     label: "수학", emoji: "🔢", type: "static", desc: "Math intro, numbers/patterns" },
+  { id: "science",  label: "과학", emoji: "🔬", type: "active", desc: "Science, observation/experiment" },
+];
+
+const COLORS = {
+  pe:       { bg: "#FFF0F0", accent: "#FF6B6B", badge: "#FFE0E0" },
+  art:      { bg: "#FFF7F0", accent: "#FF9F43", badge: "#FFE8CC" },
+  social:   { bg: "#F0F6FF", accent: "#54A0FF", badge: "#D6EAFF" },
+  language: { bg: "#F5F0FF", accent: "#5F27CD", badge: "#E5D8FF" },
+  math:     { bg: "#F0FEFF", accent: "#00D2D3", badge: "#C8F8F8" },
+  science:  { bg: "#F0FFF8", accent: "#1DD1A1", badge: "#C5F5E4" },
+};
+
+// Render subject tags
+const tagList = document.getElementById("tagList");
+SUBJECTS.forEach(s => {
+  const el = document.createElement("div");
+  el.className = "tag";
+  el.innerHTML = `<span>${s.emoji}</span><span>${s.label}</span>`;
+  tagList.appendChild(el);
+});
+
+const topicInput = document.getElementById("topic");
+const genBtn = document.getElementById("genBtn");
+const loading = document.getElementById("loading");
+const progress = document.getElementById("progress");
+const errorEl = document.getElementById("error");
+const results = document.getElementById("results");
+
+document.querySelectorAll(".ex-btn").forEach(b => {
+  b.addEventListener("click", () => { topicInput.value = b.textContent; });
+});
+topicInput.addEventListener("keydown", e => { if (e.key === "Enter") generate(); });
+genBtn.addEventListener("click", generate);
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+}
+
+// ============================================================
+// LOCAL ACTIVITY ENGINE — no API, always works (even offline)
+// ============================================================
+
+// Simple deterministic hash so the same topic gives consistent variants
+function hashStr(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) { h = (h * 31 + s.charCodeAt(i)) >>> 0; }
+  return h;
+}
+
+// Title-case a topic for natural display ("my family" -> "My Family")
+function titleCase(s) {
+  return s.replace(/\w\S*/g, w => w.charAt(0).toUpperCase() + w.slice(1));
+}
+
+// Build activity templates for one subject. Each subject has 2 variants.
+function buildActivity(subject, rawTopic) {
+  const topic = titleCase(rawTopic.trim());
+  const t = topic;                 // display form
+  const lower = rawTopic.trim().toLowerCase();
+  const variant = hashStr(lower + subject.id) % 2;
+
+  const frames = [
+    `This is a ${lower}.`,
+    `I can see a ${lower}.`,
+    `I like ${lower}.`,
+    `Where is the ${lower}?`,
+  ];
+
+  const T = {
+    // ---------------- 체육 (active) ----------------
+    pe: [
+      {
+        title: `${t} Action Relay`,
+        objective: `Students practice ${t} vocabulary while moving in a relay race.`,
+        duration: "15 min",
+        materials: ["Picture cards", "Two baskets", "Open space", "Cones"],
+        steps: [
+          `Split the class into two teams and place ${t} picture cards in a basket at the far end.`,
+          `On "Go!", the first student runs, grabs a card, runs back, and says the English word aloud.`,
+          `The team repeats the chant: "${frames[1]}"`,
+          `Continue until all cards are collected. The team with the most correctly named cards wins.`,
+        ],
+        vocabulary: ["run", "jump", "fast / slow", t, frames[1]],
+        tip: "Model the running word once yourself first so shy students feel safe to speak while moving.",
+      },
+      {
+        title: `${t} Freeze Dance`,
+        objective: `Students listen for ${t} words and respond with body movements.`,
+        duration: "10 min",
+        materials: ["Music / speaker", "Flashcards", "Open space"],
+        steps: [
+          `Play music and let students dance freely around the room.`,
+          `Stop the music and hold up a ${t} flashcard.`,
+          `Students freeze and shout the English word, then act it out with their bodies.`,
+          `Repeat with new cards, getting faster each round.`,
+        ],
+        vocabulary: ["stop", "go", "freeze", "move", t],
+        tip: "Pair a gesture with each word — students remember vocabulary far better when movement is attached.",
+      },
+    ],
+    // ---------------- 미술 (static) ----------------
+    art: [
+      {
+        title: `My ${t} Poster`,
+        objective: `Students create a labeled poster to reinforce ${t} vocabulary in English.`,
+        duration: "25 min",
+        materials: ["Paper", "Crayons / markers", "Glue", "Old magazines"],
+        steps: [
+          `Give each student a sheet of paper titled "My ${t}".`,
+          `Students draw or cut out 4–5 things related to ${t}.`,
+          `They write the English label under each picture.`,
+          `Students present their poster using the frame: "${frames[0]}"`,
+        ],
+        vocabulary: ["draw", "color", "label", "picture", t],
+        tip: "Provide a word bank on the board so students focus on creativity, not spelling stress.",
+      },
+      {
+        title: `${t} Collage Story`,
+        objective: `Students build a collage and describe it with simple English sentences.`,
+        duration: "30 min",
+        materials: ["Construction paper", "Scissors", "Glue sticks", "Color paper"],
+        steps: [
+          `Students tear or cut shapes to represent ideas about ${t}.`,
+          `They arrange and glue the pieces into one scene.`,
+          `Each student writes two sentences about their collage.`,
+          `Gallery walk: classmates point and say "${frames[1]}"`,
+        ],
+        vocabulary: ["cut", "glue", "shape", "big / small", t],
+        tip: "Keep finished work on the wall as a living word wall for the rest of the unit.",
+      },
+    ],
+    // ---------------- 사회 (active) ----------------
+    social: [
+      {
+        title: `${t} Interview Mingle`,
+        objective: `Students ask and answer real questions about ${t} to build speaking confidence.`,
+        duration: "20 min",
+        materials: ["Question sheet", "Pencils", "Open space"],
+        steps: [
+          `Give each student a sheet with 3 questions about ${t}, e.g. "Do you like ${lower}?"`,
+          `Students walk around and interview 4 different classmates.`,
+          `They write down each classmate's name and answer.`,
+          `A few students report back: "My friend likes ${lower} too!"`,
+        ],
+        vocabulary: ["ask", "answer", "friend", "yes / no", frames[2]],
+        tip: "Set a rule of English-only during the mingle and play soft background music to ease nerves.",
+      },
+      {
+        title: `${t} Role-Play Corners`,
+        objective: `Students act out social situations connected to ${t}.`,
+        duration: "20 min",
+        materials: ["Role cards", "Simple props", "Corner signs"],
+        steps: [
+          `Set up 3 corners with different ${t} scenarios.`,
+          `Give pairs a role card and 3 minutes to prepare a short dialogue.`,
+          `Each pair performs their mini role-play for the corner group.`,
+          `Class votes on the clearest English used.`,
+        ],
+        vocabulary: ["please", "thank you", "can I...?", "together", t],
+        tip: "Give sentence starters on each role card so lower-level students can still participate fully.",
+      },
+    ],
+    // ---------------- 언어 (static) ----------------
+    language: [
+      {
+        title: `${t} Sentence Builders`,
+        objective: `Students form correct English sentences about ${t} using sentence frames.`,
+        duration: "20 min",
+        materials: ["Sentence strips", "Word cards", "Worksheet"],
+        steps: [
+          `Write the frame on the board: "${frames[0]}"`,
+          `Show ${t} word cards and model one full sentence.`,
+          `Students write 4 of their own sentences about ${t}.`,
+          `Partners read sentences aloud and check each other's work.`,
+        ],
+        vocabulary: ["is / are", "a / an", "this / that", "and", t],
+        tip: "Color-code the sentence parts (noun = blue, verb = red) to make English structure visual.",
+      },
+      {
+        title: `${t} Mini Storybook`,
+        objective: `Students write and illustrate a 4-page story about ${t}.`,
+        duration: "30 min",
+        materials: ["Folded paper booklet", "Pencils", "Crayons"],
+        steps: [
+          `Each student folds paper into a 4-page booklet titled "${t}".`,
+          `Page 1–3: write one sentence and draw a picture about ${t}.`,
+          `Page 4: write the ending "The end!"`,
+          `Authors read their storybook to a partner.`,
+        ],
+        vocabulary: ["first", "then", "next", "the end", t],
+        tip: "Display finished booklets in a classroom library so students re-read each other's work.",
+      },
+    ],
+    // ---------------- 수학 (static) ----------------
+    math: [
+      {
+        title: `Counting ${t}`,
+        objective: `Students count and compare quantities while naming ${t} in English.`,
+        duration: "15 min",
+        materials: ["Counting cards", "Number flashcards", "Worksheet"],
+        steps: [
+          `Show cards with different numbers of ${t} items.`,
+          `Students count aloud in English: "one, two, three..."`,
+          `They write the matching number under each card.`,
+          `Ask comparison questions: "Which has more ${lower}?"`,
+        ],
+        vocabulary: ["how many?", "more / less", "count", "number", t],
+        tip: "Use real objects when possible — touching and moving items cements both numbers and nouns.",
+      },
+      {
+        title: `${t} Sorting & Graphing`,
+        objective: `Students sort ${t} into groups and build a simple bar graph.`,
+        duration: "20 min",
+        materials: ["Picture cards", "Graph paper", "Glue"],
+        steps: [
+          `Give each group a set of mixed ${t} picture cards.`,
+          `Students sort the cards into 2–3 categories.`,
+          `They glue cards into columns to make a bar graph.`,
+          `Discuss: "Which group has the most?" in English.`,
+        ],
+        vocabulary: ["group", "same / different", "most / least", "row", t],
+        tip: "Sentence frame 'There are ___ in this group' connects math language with full English speaking.",
+      },
+    ],
+    // ---------------- 과학 (active) ----------------
+    science: [
+      {
+        title: `${t} Observe & Describe`,
+        objective: `Students observe ${t} closely and describe it with English adjectives.`,
+        duration: "20 min",
+        materials: ["Real objects / images", "Magnifying glasses", "Observation sheet"],
+        steps: [
+          `Set up an observation station with ${t} items or images.`,
+          `Students look closely and note color, size, and shape.`,
+          `They complete the sheet: "The ${lower} is ___."`,
+          `Groups share one surprising observation with the class.`,
+        ],
+        vocabulary: ["look", "big / small", "soft / hard", "color words", t],
+        tip: "Give 3 target adjectives before observing so students have the English ready to describe.",
+      },
+      {
+        title: `${t} Sort & Predict`,
+        objective: `Students make predictions and test ideas about ${t} as young scientists.`,
+        duration: "25 min",
+        materials: ["Sorting trays", "Picture/real items", "Prediction sheet"],
+        steps: [
+          `Show several ${t}-related items and ask "What do you think?"`,
+          `Students predict how to sort them and say why in English.`,
+          `They test their sorting and move items between groups.`,
+          `Class compares predictions with results: "I was right / I was surprised!"`,
+        ],
+        vocabulary: ["I think...", "because", "test", "same / different", t],
+        tip: "Accept all predictions without judging — the goal is English output and curiosity, not correctness.",
+      },
+    ],
+  };
+
+  const chosen = T[subject.id][variant];
+  return { ...chosen, ...subject };
+}
+
+function generate() {
+  const topic = topicInput.value.trim();
+  if (!topic) return;
+
+  errorEl.classList.remove("show");
+  results.innerHTML = "";
+  loading.classList.add("show");
+  progress.textContent = "";
+
+  // Tiny delay purely for a pleasant "generating" feel
+  setTimeout(() => {
+    const total = SUBJECTS.length;
+    results.innerHTML =
+      `<div class="meta sans"><span class="dot"></span>Topic: ` +
+      `<span style="color:rgba(255,255,255,0.7);font-style:italic;">"${escapeHtml(titleCase(topic))}"</span> ` +
+      `<span id="countLabel">— ${total} activities</span></div>` +
+      `<div class="cards" id="cardGrid"></div>` +
+      `<div class="footer-note sans">카드를 클릭하면 세부 활동 내용을 확인할 수 있습니다</div>`;
+    const grid = document.getElementById("cardGrid");
+
+    SUBJECTS.forEach((subject, idx) => {
+      const a = buildActivity(subject, topic);
+      setTimeout(() => appendCard(grid, a), idx * 90); // staggered reveal
+    });
+
+    loading.classList.remove("show");
+  }, 350);
+}
+
+function appendCard(grid, a) {
+  const c = COLORS[a.id];
+  const isActive = a.type === "active";
+  const materials = (a.materials || []).map(m => `<span class="chip" style="background:${c.badge};color:${c.accent};">${escapeHtml(m)}</span>`).join("");
+  const vocab = (a.vocabulary || []).map(v => `<span class="vocab-chip" style="background:${c.accent}15;color:${c.accent};border:1px solid ${c.accent}30;">${escapeHtml(v)}</span>`).join("");
+  const steps = (a.steps || []).map(s => `<li>${escapeHtml(s)}</li>`).join("");
+
+  const card = document.createElement("div");
+  card.className = "card";
+  card.style.background = c.bg;
+  card.style.border = `1.5px solid ${c.accent}30`;
+  card.innerHTML = `
+      <div class="card-head">
+        <div class="badge-emoji" style="background:${c.badge};">${a.emoji}</div>
+        <div style="flex:1;">
+          <div class="card-meta">
+            <span class="subj-label sans" style="color:${c.accent};">${a.label}</span>
+            <span class="type-pill sans" style="background:${isActive ? c.accent : c.accent+'30'};color:${isActive ? '#fff' : c.accent};">${isActive ? '⚡ 활동적' : '✍️ 정적'}</span>
+            <span class="duration sans">⏱ ${escapeHtml(a.duration || '')}</span>
+          </div>
+          <div class="card-title sans">${escapeHtml(a.title || '')}</div>
+          <div class="card-obj sans">${escapeHtml(a.objective || '')}</div>
+        </div>
+        <div class="chevron" style="color:${c.accent};">⌄</div>
+      </div>
+      <div class="card-body" style="border-top:1px solid ${c.accent}15;">
+        <div class="body-grid">
+          <div class="box full">
+            <div class="box-label sans" style="color:${c.accent};">📋 Activity Steps</div>
+            <ol class="sans">${steps}</ol>
+          </div>
+          <div class="box">
+            <div class="box-label sans" style="color:${c.accent};">🧰 Materials</div>
+            <div class="chips sans">${materials}</div>
+          </div>
+          <div class="box">
+            <div class="box-label sans" style="color:${c.accent};">💬 Key Vocabulary</div>
+            <div class="chips sans">${vocab}</div>
+          </div>
+          ${a.tip ? `<div class="tip-box" style="background:${c.accent}10;border:1px dashed ${c.accent}40;">
+            <div class="box-label sans" style="color:${c.accent};">💡 Teacher Tip</div>
+            <div class="tip-text sans">${escapeHtml(a.tip)}</div>
+          </div>` : ''}
+        </div>
+      </div>`;
+  card.querySelector(".card-head").addEventListener("click", () => card.classList.toggle("open"));
+  grid.appendChild(card);
+}
+</script>
+</body>
+</html>
